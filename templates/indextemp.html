@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drug Cell Prediction</title>
+    <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+    <link rel="icon" type="image/png" href="https://www.isical.ac.in/sites/all/themes/isk_main/logo.png">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
+</head>
+    
+</head>
+<body>
+    <header>
+        <img src="https://www.isical.ac.in/sites/all/themes/isk_main/logo.png" alt="Institute Logo">
+        <h1>Drug Cell Prediction</h1>
+    </header>
+    <main>
+        <form>
+            <label for="drug_name">Drug Name:</label>
+            <select name="drug_name" id="drug_name">
+                <option value="" selected disabled hidden>Choose here</option>
+                {% for item in drug_items %}
+                    <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+
+            <br>
+
+            <label for="cell_line_name">Cell Line Name:</label>
+            <select name="cell_line_name" id="cell_line_name">
+                <option value="" selected disabled hidden>Choose here</option>
+                {% for item in cell_items %}
+                    <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="button" id="submit" value="Predict"></input>
+        </form>
+        {% if prediction is not none %}
+            <div id="tcnnResult">{{ prediction }}</p>
+            <div id="gdscResult">{{ prediction }}</p>
+            <div id="precilyResult">{{ prediction }}</p>
+
+        {% endif %}
+    </main>
+</body>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background-color: #f8f9fa;
+    }
+
+    header {
+        text-align: center;
+        background-color: #3498db;
+        padding: 20px;
+        color: #fff;
+    }
+
+    h1 {
+        margin: 10px 0;
+    }
+
+    main {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #ecf0f1;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    #submit {
+        background-color: #3498db;
+        color: #fff;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #2980b9;
+    }
+
+    div{
+        margin-top: 20px;
+    }
+
+    p {
+        color: #2ecc71;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        margin-top: 20px;
+    }
+
+    
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample data for drugs and cells
+        const drugItems = ['(5Z)-7-Oxozeaenol', '150412', '5-Fluorouracil', '5-azacytidine', '50869', '630600', '681640', '729189', '741909', '743380', '765771', '776928', 'A-443654', 'A-770041', 'AGI-5198', 'AGI-6780', 'AGK2', 'AICA Ribonucleotide', 'AKT inhibitor VIII', 'AMG-319', 'AR-42', 'AS601245', 'AS605240', 'AT-7519', 'AT13148', 'AZ6102', 'AZ628', 'AZ960', 'AZD1208', 'AZD1332', 'AZD2014', 'AZD3759', 'AZD4547', 'AZD5153', 'AZD5363', 'AZD5438', 'AZD5991', 'AZD6482', 'AZD6738', 'AZD7762', 'AZD8055', 'AZD8186', 'Acetalax', 'Afatinib', 'Afuresertib', 'Alectinib', 'Alisertib', 'Alpelisib', 'Amuvatinib', 'Avagacestat', 'Axitinib', 'BAY-61-3606', 'BI-2536', 'BIBR-1532', 'BIX02189', 'BMS-345541', 'BMS-509744', 'BMS-536924', 'BMS-754807', 'BX-912', 'BX795', 'Belinostat', 'Bexarotene', 'Bicalutamide', 'Bleomycin', 'Bortezomib', 'Bosutinib', 'Bromosporine', 'Bryostatin 1', 'Buparlisib', 'CAY10603', 'CCT-018159', 'CCT007093', 'CGP-082996', 'CGP-60474', 'CHIR-99021', 'CI-1040', 'CMK', 'CP466722', 'CP724714', 'CUDC-101', 'CX-5461', 'CZC24832', 'Cabozantinib', 'Camptothecin', 'Cediranib', 'Crizotinib', 'Cyclopamine', 'Cytarabine', 'DMOG', 'Dabrafenib', 'Dacarbazine', 'Dacinostat', 'Dactolisib', 'Daporinad', 'Dasatinib', 'Dihydrorotenone', 'Dinaciclib', 'Docetaxel', 'Doramapimod', 'Doxorubicin', 'EHT-1864', 'EPZ004777', 'EPZ5676', 'Elephantin', 'Elesclomol', 'Embelin', 'Entinostat', 'Entospletinib', 'Enzastaurin', 'Epirubicin', 'Epothilone B', 'Erlotinib', 'Etoposide', 'FH535', 'FMK', 'FR-180204', 'FTI-277', 'Fedratinib', 'Fludarabine', 'Foretinib', 'Fulvestrant', 'GDC0810', 'GNE-317', 'GNF-2', 'GSK-LSD1', 'GSK1070916', 'GSK1904529A', 'GSK2578215A', 'GSK2606414', 'GSK269962A', 'GSK2801', 'GSK2830371', 'GSK319347A', 'GSK343', 'GSK429286A', 'GSK591', 'GSK650394', 'GSK690693', 'GW-2580', 'GW441756', 'GW843682X', 'Gallibiscoquinazole', 'Gefitinib', 'Gemcitabine', 'HG-5-113-01', 'HG-5-88-01', 'HG6-64-1', 'I-BET-762', 'I-BRD9', 'ICL-SIRT078', 'IOX2', 'IPA-3', 'IWP-2', 'Ibrutinib', 'Idelalisib', 'Imatinib', 'Ipatasertib', 'Irinotecan', 'Ispinesib Mesylate', 'JNK Inhibitor VIII', 'JNK-9L', 'JQ1', 'JW-7-24-1', 'KIN001-244', 'KIN001-260', 'KIN001-266', 'KIN001-270', 'KU-55933', 'LCL161', 'LFM-A13', 'LGK974', 'LJI308', 'LMP744', 'LY2109761', 'Lapatinib', 'Leflunomide', 'Lenalidomide', 'Lestaurtinib', 'Linifanib', 'Linsitinib', 'Luminespib', 'MG-132', 'MIM1', 'MIRA-1', 'MK-1775', 'MK-2206', 'MK-8776', 'ML323', 'MN-64', 'MPS-1-IN-1', 'Masitinib', 'Methotrexate', 'Midostaurin', 'Mirin', 'Mitomycin-C', 'Mitoxantrone', 'Motesanib', 'Mycophenolic acid', 'N-acetyl cysteine', 'NG-25', 'NPK76-II-72-1', 'NSC-207895', 'NSC-87877', 'NU7441', 'NVP-ADW742', 'NVP-BHG712', 'NVP-TAE684', 'Navitoclax', 'Nelarabine', 'Nilotinib', 'Niraparib', 'Nutlin-3a (-)', 'OF-1', 'OSI-027', 'OSI-930', 'OSU-03012', 'OTX015', 'Obatoclax Mesylate', 'Olaparib', 'Omipalisib', 'Osimertinib', 'P22077', 'PAC-1', 'PCI-34051', 'PD0325901', 'PD173074', 'PF-4708671', 'PF-562271', 'PFI-1', 'PHA-665752', 'PHA-793887', 'PI-103', 'PIK-93', 'PLX-4720', 'POMHEX', 'PRIMA-1MET', 'PRT062607', 'Paclitaxel', 'Palbociclib', 'Parthenolide', 'Pazopanib', 'Pelitinib', 'Pevonedistat', 'Phenformin', 'Pictilisib', 'Piperlongumine', 'Podophyllotoxin bromide', 'Ponatinib', 'Pyridostatin', 'Pyrimethamine', 'QL-XII-47', 'QS11', 'Quizartinib', 'RO-3306', 'RVX-208', 'Rapamycin', 'Refametinib', 'Remodelin', 'Ribociclib', 'Romidepsin', 'Rucaparib', 'Ruxolitinib', 'S-Trityl-L-cysteine', 'SB-505124', 'SB216763', 'SB505124', 'SB590885', 'SCH772984', 'SGC0946', 'SL0101', 'SN-38', 'SNX-2112', 'STF-62247', 'Salubrinal', 'Sapitinib', 'Saracatinib', 'Savolitinib', 'Schweinfurthin A', 'Seliciclib', 'Selisistat', 'Selumetinib', 'Sepantronium bromide', 'Serdemetan', 'Shikonin', 'Sinularin', 'Sorafenib', 'Staurosporine', 'Sunitinib', 'T0901317', 'TAK-715', 'TGX221', 'TPCA-1', 'TW 37', 'Talazoparib', 'Tamoxifen', 'Tanespimycin', 'Taselisib', 'Telomerase Inhibitor IX', 'Temozolomide', 'Temsirolimus', 'Teniposide', 'Thapsigargin', 'Tipifarnib', 'Tivozanib', 'Topotecan', 'Tozasertib', 'Trametinib', 'Tretinoin', 'Tubastatin A', 'UMI-77', 'UNC0379', 'UNC0638', 'UNC1215', 'Ulixertinib', 'Uprosertib', 'VE-822', 'VE821', 'VX-11e', 'VX-702', 'Veliparib', 'Vinblastine', 'Vinorelbine ', 'Vismodegib', 'Vorinostat', 'WEHI-539', 'WH-4-023', 'WHI-P97', 'WIKI4', 'WZ3105', 'WZ4003', 'Wee1 Inhibitor', 'Wnt-C59', 'XAV939', 'XMD8-85', 'XMD8-92', 'Y-39983', 'YK-4-279', 'YM201636', 'Z-LLNle-CHO', 'ZM447439', 'ZSTK474', 'Zibotentan', 'Zoledronate', 'alpha-lipoic acid', 'ascorbate (vitamin C)', 'glutathione'];
+
+        const cellItems = ['201T', '22RV1', '23132-87', '42-MG-BA', '451Lu', '5637', '639-V', '647-V', '697', '769-P', '786-0', '8-MG-BA', '8305C', '8505C', 'A101D', 'A172', 'A204', 'A2058', 'A253', 'A2780', 'A3-KAW', 'A375', 'A388', 'A4-Fuk', 'A427', 'A431', 'A498', 'A549', 'A673', 'A704', 'ABC-1', 'ACHN', 'AGS', 'ALL-PO', 'ALL-SIL', 'AM-38', 'AMO-1', 'AN3-CA', 'ARH-77', 'ASH-3', 'ATN-1', 'AU565', 'AsPC-1', 'BALL-1', 'BB30-HNC', 'BB49-HNC', 'BB65-RCC', 'BC-1', 'BC-3', 'BCPAP', 'BE-13', 'BE2-M17', 'BEN', 'BFTC-905', 'BFTC-909', 'BHT-101', 'BHY', 'BICR10', 'BICR22', 'BICR31', 'BICR78', 'BL-41', 'BPH-1', 'BT-20', 'BT-474', 'BT-483', 'BT-549', 'BV-173', 'Becker', 'BxPC-3', 'C-33-A', 'C-4-I', 'C2BBe1', 'C32', 'C3A', 'CA46', 'CADO-ES1', 'CAKI-1', 'CAL-120', 'CAL-12T', 'CAL-148', 'CAL-27', 'CAL-29', 'CAL-33', 'CAL-39', 'CAL-51', 'CAL-54', 'CAL-62', 'CAL-72', 'CAL-78', 'CAL-85-1', 'CAMA-1', 'CAPAN-1', 'CAS-1', 'CCF-STTG1', 'CCK-81', 'CCRF-CEM', 'CESS', 'CFPAC-1', 'CGTH-W-1', 'CHL-1', 'CHP-126', 'CHP-134', 'CHP-212', 'CHSA0011', 'CHSA0108', 'CHSA8926', 'CL-11', 'CL-34', 'CL-40', 'CMK', 'CML-T1', 'COLO-205', 'COLO-320-HSR', 'COLO-668', 'COLO-678', 'COLO-679', 'COLO-680N', 'COLO-684', 'COLO-783', 'COLO-792', 'COLO-800', 'COLO-824', 'COLO-829', 'COR-L105', 'COR-L23', 'COR-L279', 'COR-L303', 'COR-L311', 'COR-L32', 'COR-L321', 'COR-L88', 'COR-L95', 'CP50-MEL-B', 'CP66-MEL', 'CP67-MEL', 'CPC-N', 'CRO-AP2', 'CS1', 'CTB-1', 'CTV-1', 'CW-2', 'Ca-Ski', 'Ca9-22', 'CaR-1', 'Calu-3', 'Calu-6', 'Caov-3', 'Caov-4', 'Capan-2', 'ChaGo-K-1', 'D-247MG', 'D-263MG', 'D-283MED', 'D-336MG', 'D-392MG', 'D-423MG', 'D-502MG', 'D-542MG', 'D-566MG', 'DAN-G', 'DB', 'DBTRG-05MG', 'DEL', 'DG-75', 'DIFI', 'DJM-1', 'DK-MG', 'DMS-114', 'DMS-273', 'DMS-53', 'DMS-79', 'DND-41', 'DOHH-2', 'DOK', 'DOV13', 'DSH1', 'DU-145', 'DU-4475', 'Daoy', 'Daudi', 'Detroit562', 'DoTc2-4510', 'EB-3', 'EB2', 'EBC-1', 'EC-GI-10', 'ECC10', 'ECC12', 'EFM-19', 'EFM-192A', 'EFO-21', 'EFO-27', 'EGI-1', 'EHEB', 'EJM', 'EKVX', 'EM-2', 'EMC-BAC-1', 'EMC-BAC-2', 'EN', 'EPLC-272H', 'ES-2', 'ES1', 'ES3', 'ES4', 'ES5', 'ES6', 'ES7', 'ES8', 'ESO26', 'ESO51', 'ESS-1', 'ETK-1', 'EVSA-T', 'EW-1', 'EW-11', 'EW-12', 'EW-13', 'EW-16', 'EW-18', 'EW-22', 'EW-24', 'EW-3', 'EW-7', 'EoL-1-cell', 'FADU', 'FLO-1', 'FTC-133', 'FU-OV-1', 'FU97', 'Farage', 'G-292-Clone-A141B1', 'G-361', 'G-401', 'G-402', 'G-MEL', 'GA-10', 'GAK', 'GAMG', 'GB-1', 'GCIY', 'GCT', 'GDM-1', 'GI-1', 'GI-ME-N', 'GMS-10', 'GOTO', 'GP5d', 'GR-ST', 'GRANTA-519', 'GT3TKB', 'H-EMC-SS', 'H2369', 'H2373', 'H2461', 'H2591', 'H2595', 'H2722', 'H2731', 'H2795', 'H2803', 'H2804', 'H2810', 'H2818', 'H2869', 'H290', 'H3118', 'H3255', 'H4', 'H513', 'H9', 'HA7-RCC', 'HAL-01', 'HARA', 'HC-1', 'HCC-15', 'HCC-33', 'HCC-366', 'HCC-44', 'HCC-56', 'HCC-78', 'HCC-827', 'HCC1143', 'HCC1187', 'HCC1395', 'HCC1419', 'HCC1428', 'HCC1500', 'HCC1569', 'HCC1599', 'HCC1806', 'HCC1937', 'HCC1954', 'HCC202', 'HCC2157', 'HCC2218', 'HCC2998', 'HCC38', 'HCC70', 'HCE-4', 'HCT-116', 'HCT-15', 'HD-MY-Z', 'HDLM-2', 'HDQ-P1', 'HEC-1', 'HEL', 'HGC-27', 'HH', 'HL-60', 'HLE', 'HMV-II', 'HN', 'HO-1-N-1', 'HO-1-u-1', 'HOP-62', 'HOP-92', 'HOS', 'HPAC', 'HPAF-II', 'HSC-2', 'HSC-3', 'HSC-39', 'HSC-4', 'HT', 'HT-1080', 'HT-115', 'HT-1197', 'HT-1376', 'HT-144', 'HT-29', 'HT-3', 'HT55', 'HTC-C3', 'HUTU-80', 'HeLa', 'Hep3B2-1-7', 'Hey', 'Hs-445', 'Hs-578-T', 'Hs-633T', 'Hs-683', 'Hs-766T', 'Hs-939-T', 'Hs-940-T', 'Hs746T', 'HuCCT1', 'HuH-7', 'HuO-3N1', 'HuO9', 'HuP-T3', 'HuP-T4', 'IA-LM', 'IGR-1', 'IGR-37', 'IGROV-1', 'IHH-4', 'IM-9', 'IM-95', 'IMR-5', 'IPC-298', 'IST-MEL1', 'IST-MES1', 'IST-SL1', 'IST-SL2', 'J82', 'JAR', 'JEG-3', 'JEKO-1', 'JHH-1', 'JHH-2', 'JHH-4', 'JHH-6', 'JHH-7', 'JHOS-2', 'JHOS-3', 'JHOS-4', 'JHU-011', 'JHU-022', 'JHU-029', 'JIMT-1', 'JJN-3', 'JM1', 'JSC-1', 'JURL-MK1', 'JVM-2', 'JVM-3', 'JiyoyeP-2003', 'Jurkat', 'K-562', 'K2', 'K5', 'KALS-1', 'KARPAS-1106P', 'KARPAS-231', 'KARPAS-299', 'KARPAS-422', 'KARPAS-45', 'KARPAS-620', 'KASUMI-1', 'KATOIII', 'KCL-22', 'KE-37', 'KELLY', 'KG-1', 'KGN', 'KINGS-1', 'KLE', 'KM-H2', 'KM12', 'KMH-2', 'KMOE-2', 'KMRC-1', 'KMRC-20', 'KMS-11', 'KMS-12-BM', 'KNS-42', 'KNS-62', 'KNS-81-FD', 'KON', 'KOPN-8', 'KOSC-2', 'KP-1N', 'KP-2', 'KP-3', 'KP-4', 'KP-N-RT-BM-1', 'KP-N-YN', 'KP-N-YS', 'KS-1', 'KU-19-19', 'KU812', 'KURAMOCHI', 'KY821', 'KYAE-1', 'KYM-1', 'KYSE-140', 'KYSE-150', 'KYSE-180', 'KYSE-220', 'KYSE-270', 'KYSE-410', 'KYSE-450', 'KYSE-50', 'KYSE-510', 'KYSE-520', 'KYSE-70', 'L-1236', 'L-363', 'L-428', 'L-540', 'LAMA-84', 'LAN-6', 'LB1047-RCC', 'LB2241-RCC', 'LB2518-MEL', 'LB373-MEL-D', 'LB647-SCLC', 'LB771-HNC', 'LB831-BLC', 'LB996-RCC', 'LC-1-sq', 'LC-2-ad', 'LC4-1', 'LCLC-103H', 'LCLC-97TM1', 'LK-2', 'LN-18', 'LN-229', 'LN-405', 'LNCaP-Clone-FGC', 'LNZTA3WT4', 'LOU-NH91', 'LOUCY', 'LOXIMVI', 'LP-1', 'LS-1034', 'LS-123', 'LS-180', 'LS-411N', 'LS-513', 'LU-134-A', 'LU-135', 'LU-139', 'LU-165', 'LU-65', 'LU-99A', 'LXF-289', 'LoVo', 'M059J', 'M14', 'MC-CAR', 'MC-IXC', 'MC116', 'MCF7', 'MDA-MB-157', 'MDA-MB-175-VII', 'MDA-MB-231', 'MDA-MB-330', 'MDA-MB-361', 'MDA-MB-415', 'MDA-MB-436', 'MDA-MB-453', 'MDA-MB-468', 'MDST8', 'ME-1', 'ME-180', 'MEG-01', 'MEL-HO', 'MEL-JUSO', 'MES-SA', 'MFE-280', 'MFE-296', 'MFE-319', 'MFH-ino', 'MFM-223', 'MG-63', 'MHH-CALL-2', 'MHH-ES-1', 'MHH-NB-11', 'MHH-PREB-1', 'MIA-PaCa-2', 'MKN1', 'MKN28', 'MKN45', 'MKN7', 'ML-1', 'ML-2', 'MLMA', 'MM1S', 'MMAC-SF', 'MN-60', 'MOG-G-CCM', 'MOG-G-UVW', 'MOLM-13', 'MOLM-16', 'MOLP-8', 'MOLT-13', 'MOLT-16', 'MOLT-4', 'MONO-MAC-6', 'MPP-89', 'MRK-nu-1', 'MS-1', 'MS751', 'MSTO-211H', 'MV-4-11', 'MY-M12', 'MZ1-PC', 'MZ2-MEL', 'MZ7-mel', 'Mewo', 'Mo-T', 'NALM-6', 'NAMALWA', 'NB(TU)1-10', 'NB1', 'NB10', 'NB12', 'NB13', 'NB14', 'NB17', 'NB4', 'NB5', 'NB6', 'NB69', 'NB7', 'NCC010', 'NCC021', 'NCI-H1048', 'NCI-H1092', 'NCI-H1105', 'NCI-H1155', 'NCI-H128', 'NCI-H1299', 'NCI-H1304', 'NCI-H1341', 'NCI-H1355', 'NCI-H1395', 'NCI-H1417', 'NCI-H1435', 'NCI-H1436', 'NCI-H1437', 'NCI-H146', 'NCI-H1563', 'NCI-H1568', 'NCI-H1573', 'NCI-H1581', 'NCI-H1623', 'NCI-H1648', 'NCI-H1650', 'NCI-H1651', 'NCI-H1666', 'NCI-H1688', 'NCI-H1693', 'NCI-H1694', 'NCI-H1703', 'NCI-H1734', 'NCI-H1755', 'NCI-H1770', 'NCI-H1781', 'NCI-H1792', 'NCI-H1793', 'NCI-H1836', 'NCI-H1838', 'NCI-H1869', 'NCI-H187', 'NCI-H1876', 'NCI-H1915', 'NCI-H1944', 'NCI-H196', 'NCI-H1963', 'NCI-H1975', 'NCI-H1993', 'NCI-H2009', 'NCI-H2023', 'NCI-H2029', 'NCI-H2030', 'NCI-H2052', 'NCI-H2066', 'NCI-H2081', 'NCI-H2085', 'NCI-H2087', 'NCI-H209', 'NCI-H211', 'NCI-H2110', 'NCI-H2122', 'NCI-H2135', 'NCI-H2141', 'NCI-H2170', 'NCI-H2171', 'NCI-H2172', 'NCI-H2196', 'NCI-H2227', 'NCI-H2228', 'NCI-H226', 'NCI-H2291', 'NCI-H23', 'NCI-H2342', 'NCI-H2347', 'NCI-H2405', 'NCI-H2444', 'NCI-H2452', 'NCI-H250', 'NCI-H28', 'NCI-H292', 'NCI-H3122', 'NCI-H322M', 'NCI-H345', 'NCI-H358', 'NCI-H378', 'NCI-H441', 'NCI-H446', 'NCI-H460', 'NCI-H508', 'NCI-H510A', 'NCI-H520', 'NCI-H522', 'NCI-H524', 'NCI-H526', 'NCI-H596', 'NCI-H630', 'NCI-H64', 'NCI-H647', 'NCI-H650', 'NCI-H661', 'NCI-H69', 'NCI-H716', 'NCI-H720', 'NCI-H727', 'NCI-H747', 'NCI-H748', 'NCI-H810', 'NCI-H82', 'NCI-H835', 'NCI-H838', 'NCI-H841', 'NCI-H847', 'NCI-H929', 'NCI-N87', 'NCI-SNU-1', 'NCI-SNU-16', 'NCI-SNU-5', 'NEC8', 'NH-12', 'NK-92MI', 'NKM-1', 'NMC-G1', 'NOMO-1', 'NOS-1', 'NTERA-S-cl-D1', 'NU-DUL-1', 'NUGC-3', 'NUGC-4', 'NY', 'OACM5-1', 'OACp4C', 'OAW-28', 'OAW-42', 'OC-314', 'OCI-AML2', 'OCI-AML3', 'OCI-AML5', 'OCI-LY-19', 'OCI-LY7', 'OCI-M1', 'OCUB-M', 'OCUM-1', 'OE19', 'OE21', 'OE33', 'OMC-1', 'ONS-76', 'OPM-2', 'OS-RC-2', 'OSC-19', 'OSC-20', 'OV-17R', 'OV-56', 'OV-7', 'OV-90', 'OVCA420', 'OVCA433', 'OVCAR-3', 'OVCAR-4', 'OVCAR-5', 'OVCAR-8', 'OVISE', 'OVK-18', 'OVKATE', 'OVMIU', 'OVTOKO', 'P12-ICHIKAWA', 'P30-OHK', 'P31-FUJ', 'P32-ISH', 'PA-1', 'PA-TU-8902', 'PA-TU-8988T', 'PANC-02-03', 'PANC-03-27', 'PANC-04-03', 'PANC-08-13', 'PANC-10-05', 'PC-14', 'PC-3', 'PC-3_[JPC-3]', 'PCI-15A', 'PCI-30', 'PCI-38', 'PCI-4B', 'PCI-6A', 'PE-CA-PJ15', 'PEO1', 'PF-382', 'PFSK-1', 'PL-21', 'PL18', 'PL4', 'PSN1', 'PWR-1E', 'QGP-1', 'QIMR-WIL', 'RC-K8', 'RCC-AB', 'RCC-ER', 'RCC-FG2', 'RCC-JF', 'RCC-JW', 'RCC-MF', 'RCC10RGB', 'RCH-ACV', 'RCM-1', 'RD', 'REH', 'RERF-GC-1B', 'RERF-LC-KJ', 'RERF-LC-MS', 'RERF-LC-Sq1', 'RF-48', 'RH-1', 'RH-18', 'RH-41', 'RKN', 'RKO', 'RL', 'RL95-2', 'RMG-I', 'RO82-W-1', 'ROS-50', 'RPMI-2650', 'RPMI-6666', 'RPMI-7951', 'RPMI-8226', 'RPMI-8402', 'RPMI-8866', 'RS4-11', 'RT-112', 'RT4', 'RVH-421', 'RXF393', 'Raji', 'Ramos-2G6-4C10', 'SAS', 'SAT', 'SBC-1', 'SBC-3', 'SBC-5', 'SCC-15', 'SCC-25', 'SCC-3', 'SCC-4', 'SCC-9', 'SCC90', 'SCH', 'SF126', 'SF268', 'SF295', 'SF539', 'SH-4', 'SHP-77', 'SIG-M5', 'SIMA', 'SISO', 'SJRH30', 'SJSA-1', 'SK-CO-1', 'SK-ES-1', 'SK-GT-2', 'SK-GT-4', 'SK-HEP-1', 'SK-LMS-1', 'SK-LU-1', 'SK-MEL-1', 'SK-MEL-2', 'SK-MEL-24', 'SK-MEL-28', 'SK-MEL-3', 'SK-MEL-30', 'SK-MEL-31', 'SK-MEL-5', 'SK-MES-1', 'SK-MG-1', 'SK-MM-2', 'SK-N-AS', 'SK-N-DZ', 'SK-N-FI', 'SK-N-SH', 'SK-OV-3', 'SK-PN-DW', 'SK-UT-1', 'SKG-IIIa', 'SKM-1', 'SKN', 'SKN-3', 'SLVL', 'SN12C', 'SNB75', 'SNG-M', 'SNU-1040', 'SNU-175', 'SNU-182', 'SNU-387', 'SNU-398', 'SNU-407', 'SNU-423', 'SNU-449', 'SNU-475', 'SNU-61', 'SNU-81', 'SNU-C1', 'SNU-C2B', 'SNU-C5', 'SR', 'ST486', 'STS-0421', 'SU-DHL-1', 'SU-DHL-10', 'SU-DHL-16', 'SU-DHL-4', 'SU-DHL-5', 'SU-DHL-6', 'SU-DHL-8', 'SU8686', 'SUIT-2', 'SUP-B15', 'SUP-B8', 'SUP-HD1', 'SUP-M2', 'SUP-T1', 'SW1088', 'SW1116', 'SW1271', 'SW13', 'SW1417', 'SW1463', 'SW156', 'SW1573', 'SW1710', 'SW1783', 'SW1990', 'SW48', 'SW620', 'SW626', 'SW684', 'SW756', 'SW780', 'SW837', 'SW872', 'SW900', 'SW948', 'SW954', 'SW962', 'SW982', 'Saos-2', 'SiHa', 'T-24', 'T-T', 'T47D', 'T84', 'T98G', 'TALL-1', 'TC-71', 'TC-YIK', 'TCCSUP', 'TE-1', 'TE-10', 'TE-11', 'TE-12', 'TE-15', 'TE-4', 'TE-441-T', 'TE-5', 'TE-6', 'TE-8', 'TE-9', 'TGBC11TKB', 'TGBC1TKB', 'TGBC24TKB', 'TGW', 'THP-1', 'TK', 'TK10', 'TMK-1', 'TOV-112D', 'TOV-21G', 'TT', 'TT2609-C02', 'TUR', 'TYK-nu', 'U-118-MG', 'U-2-OS', 'U-266', 'U-698-M', 'U-87-MG', 'U031', 'U251', 'UACC-257', 'UACC-62', 'UACC-812', 'UACC-893', 'UM-UC-3', 'UMC-11', 'UWB1.289', 'VA-ES-BJ', 'VAL', 'VCaP', 'VM-CUB-1', 'VMRC-LCD', 'VMRC-MELG', 'VMRC-RCW', 'VMRC-RCZ', 'WIL2-NS', 'WM-115', 'WM1552C', 'WM278', 'WM35', 'WM793B', 'WSU-DLCL2', 'WSU-NHL', 'YAPC', 'YH-13', 'YKG-1', 'YMB-1-E', 'YT', 'ZR-75-30', 'huH-1', 'no-10', 'no-11'];
+    
+        // Get dropdown elements
+        var drugDropdown = document.getElementById('drug_name');
+        var cellDropdown = document.getElementById('cell_line_name');
+    
+        // Populate drug dropdown
+        drugItems.forEach(function(drug) {
+            var option = document.createElement('option');
+            option.value = drug;
+            option.text = drug;
+            drugDropdown.appendChild(option);
+        });
+    
+        // Populate cell dropdown
+        cellItems.forEach(function(cell) {
+            var option = document.createElement('option');
+            option.value = cell;
+            option.text = cell;
+            cellDropdown.appendChild(option);
+        });
+    
+
+        // Event listener for the submit button
+        document.getElementById('submit').addEventListener('click', function () {
+            // Get selected values from dropdowns
+            var selectedDrug = drugDropdown.value;
+            var selectedCell = cellDropdown.value;
+
+            console.log("selectedDrug: " + selectedDrug);
+            console.log("selectedCell: " + selectedCell);
+    
+            // Make an AJAX request to the server
+            //------------------------------------------------------------------------------
+            fetch('/precily', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    drug_name: selectedDrug,
+                    cell_line_name: selectedCell,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // Assuming the server returns an object with an 'ic50' property
+                var ic50Value = data.prediction;
+    
+                // Update the DOM with the received IC50 value
+                var precilyResult = document.getElementById('precilyResult');
+                $(precilyResult).slideUp(callback = function() {
+                    precilyResult.innerHTML = 'Precily IC50 : <p>'+ic50Value+'</p>';
+                });
+                $(precilyResult).slideDown();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                //document.getElementById('precilyResult').innerHTML = 'Precily IC50 : <p style="red">This Drug Cell-Line interaction is not found in database.</p>';
+            });
+        //------------------------------------------------------------------------------
+
+            fetch('/tcnn', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    drug_name: selectedDrug,
+                    cell_line_name: selectedCell,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // Assuming the server returns an object with an 'ic50' property
+                var ic50Value = data.prediction;
+    
+                // Update the DOM with the received IC50 value
+                var tcnnResult = document.getElementById('tcnnResult');
+                $(tcnnResult).slideUp(callback = function() {
+                    tcnnResult.innerHTML = 'TCNN  IC50 : <p>'+ic50Value+'</p>';
+                });
+                $(tcnnResult).slideDown();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                //document.getElementById('tcnnResult').innerHTML = 'TCNN  IC50 : <p style="red">key not in tcnn data model</p>';
+            });
+
+            //------------------------------------------------------------------------------
+            fetch('/gdsc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    drug_name: selectedDrug,
+                    cell_line_name: selectedCell,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                // Assuming the server returns an object with an 'ic50' property
+                var ic50Value = data.prediction;
+    
+                // Update the DOM with the received IC50 value
+                var gdscResult = document.getElementById('gdscResult');
+                $(gdscResult).slideUp(callback = function() {
+                    gdscResult.innerHTML = 'GDSC IC50 : <p>'+ic50Value+'</p>'
+                });
+                $(gdscResult).slideDown();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                //document.getElementById('gdscResult').innerHTML = 'GDSC IC50 : <p style="red">Drug Cell-Line combination not in GDSC database.</p>';
+            });
+        });
+    });
+    
+    
+</script>
+</html>
