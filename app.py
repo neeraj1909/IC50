@@ -9,7 +9,6 @@ import numpy as np
 # Set TensorFlow to use CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-
 PATHWAY_DICT_PATH = 'my_data/precily_pathways_dict.npy'
 GDSC_DICT_PATH = 'my_data/precily_labels_dict.npy'
 SMILES_PATH = 'my_data/canonical_smiles.json'
@@ -85,26 +84,29 @@ def preprocess_input_prc(drug_name, cell_line_name):
     # print(f'Pathway Dict: {len(pathway_dict)}')
     
     # Assuming drug_data and cell_data are single elements, convert them to numpy arrays
-    pathway_info = np.array(pathway_dict[key]).reshape(1,-1)
-    #print(f'Pathway Info: {pathway_info}')
-    # Make predictions using the loaded model
-    predictions = model_prc.predict(pathway_info)
-    # Return the predictions
-    return predictions[0][0]
+    if key not in pathway_dict:
+        return "error"
+    else:
+        pathway_info = np.array(pathway_dict[key]).reshape(1,-1)
+        #print(f'Pathway Info: {pathway_info}')
+        # Make predictions using the loaded model
+        predictions = model_prc.predict(pathway_info)
+        # Return the predictions
+        return predictions[0][0]
 
 
 def preprocess_input_gdsc(drug_name, cell_line_name):
     # Make predictions using the loaded model
     global gdsc_dict
     key = (str(cell_line_name), str(drug_name))
-    predictions = gdsc_dict[key]
+    predictions = gdsc_dict.get(key,"error")
     return predictions
 
 def preprocess_input_paccmann(drug_name, cell_line_name):
     # Make predictions using the loaded model
     global paccmann_dict
     key = (str(drug_name),str(cell_line_name))
-    predictions = paccmann_dict[key]
+    predictions = paccmann_dict.get(key,"error")
     return predictions
 
 
