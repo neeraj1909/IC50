@@ -16,37 +16,24 @@ PACCMANN_PATH = 'my_data/paccmann_array.npy'
 MODEL_PATH_prc = 'tf2_model_all/precily_cv_5.hdf5'  # Update with the actual path
 MODEL_PATH_tcnn = 'tf2_model_all/best_model.h5'  # Update with the actual path
 
-pathway_dict = np.load(PATHWAY_DICT_PATH, allow_pickle=True).item()
-print(f'Pathway Dict: {len(pathway_dict)}')
-gdsc_dict = np.load(GDSC_DICT_PATH, allow_pickle=True).item()
-print(f'GDSC Dict: {len(gdsc_dict)}')
-paccmann_dict = np.load(PACCMANN_PATH, allow_pickle=True).item()
-print(f'PACCMANN Dict: {len(paccmann_dict)}')
 
-#model taking final 600 pathways
-model_prc = tf.keras.models.load_model(MODEL_PATH_prc)
-# Load the model
-model_tcnn = tf.keras.models.load_model(MODEL_PATH_tcnn)
-
-with open(SMILES_PATH, 'r') as fp:
-    canonical_smiles = json.load(fp)
-
-    
 def calculate_y(z):
     """
     Calculate y from z using the inverse of the formula: y = (1/z - 1)**(-10)
-    
+
     Parameters:
     z (float): Input value for z
-    
+
     Returns:
     float: Calculated value for y
     """
     return (1/z - 1)**(-10)
-    
+
 def calculate_smiles(drug_name):
     # load the SMILES json file
-    global canonical_smiles
+    with open(SMILES_PATH, 'r') as fp:
+        canonical_smiles = json.load(fp)
+
     canonical_smile = canonical_smiles[drug_name]
     return canonical_smile
 
@@ -55,7 +42,7 @@ def calculate_genetic_feature(cell_line_name):
     cell_mut_dict = np.load("my_data/cell_mut_matrix.npy", allow_pickle=True, encoding="latin1").item()
     cell_mut = cell_mut_dict["cell_mut"]
     cell_dict = cell_mut_dict['cell_dict']
-    
+
     # calculate id-number of a cell
     cell_id = cell_dict[cell_line_name]
     cell_genetic_feature = cell_mut[cell_id]
@@ -67,8 +54,11 @@ def preprocess_input_tcnn(drug_name, cell_line_name):
     drug_data = np.transpose(drug_data, (0, 2, 1))  # Transpose the last two dimensions
 
     cell_data = np.array([calculate_genetic_feature(cell_line_name)])
-    
+
     # print(f'DRUG Name: {drug_data}, CELL data: {cell_data}')
+
+    # Load the model
+    model_tcnn = tf.keras.models.load_model(MODEL_PATH_tcnn)
 
     # Make predictions using the loaded model
     predictions = model_tcnn.predict([drug_data, cell_data])
@@ -77,12 +67,16 @@ def preprocess_input_tcnn(drug_name, cell_line_name):
     return predictions[0][0]
 
 def preprocess_input_prc(drug_name, cell_line_name):
-    global pathway_dict
+    pathway_dict = np.load(PATHWAY_DICT_PATH, allow_pickle=True).item()
+    print(f'Pathway Dict: {len(pathway_dict)}')
+
+    #model taking final 600 pathways
+    model_prc = tf.keras.models.load_model(MODEL_PATH_prc)
     key = (str(cell_line_name), str(drug_name))
-    
+
     # print(f'key: {key}')
     # print(f'Pathway Dict: {len(pathway_dict)}')
-    
+
     # Assuming drug_data and cell_data are single elements, convert them to numpy arrays
     if key not in pathway_dict:
         return "error"
@@ -97,14 +91,18 @@ def preprocess_input_prc(drug_name, cell_line_name):
 
 def preprocess_input_gdsc(drug_name, cell_line_name):
     # Make predictions using the loaded model
-    global gdsc_dict
+    gdsc_dict = np.load(GDSC_DICT_PATH, allow_pickle=True).item()
+    print(f'GDSC Dict: {len(gdsc_dict)}')
+
     key = (str(cell_line_name), str(drug_name))
     predictions = gdsc_dict.get(key,"error")
     return predictions
 
 def preprocess_input_paccmann(drug_name, cell_line_name):
+    paccmann_dict = np.load(PACCMANN_PATH, allow_pickle=True).item()
+    print(f'PACCMANN Dict: {len(paccmann_dict)}')
+
     # Make predictions using the loaded model
-    global paccmann_dict
     key = (str(drug_name),str(cell_line_name))
     predictions = paccmann_dict.get(key,"error")
     return predictions
@@ -113,7 +111,7 @@ def preprocess_input_paccmann(drug_name, cell_line_name):
 
 # instance of a flask object
 app = Flask(__name__)
-    
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     prediction = None
