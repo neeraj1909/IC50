@@ -3,6 +3,7 @@ import os
 import json
 import tensorflow as tf
 from flask import Flask, render_template, request, request, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 import numpy as np
 
 
@@ -111,6 +112,7 @@ def preprocess_input_paccmann(drug_name, cell_line_name):
 
 # instance of a flask object
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
