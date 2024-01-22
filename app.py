@@ -10,8 +10,11 @@ import numpy as np
 # Set TensorFlow to use CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-PATHWAY_DICT_PATH = 'my_data/precily_pathways_dict.npy'
-GDSC_DICT_PATH = 'my_data/precily_labels_dict.npy'
+# PATHWAY_DICT_PATH = 'my_data/precily_pathways_dict.npy'
+PRECILY_CELL_LINE_DICT_PATH = 'my_data/celline_pathways_dict.npy'
+PRECILY_DRUG_DICT_PATH = 'my_data/drug_pathways_dict.npy'
+# GDSC_DICT_PATH = 'my_data/precily_labels_dict.npy'f
+GDSC_DICT_PATH = 'my_data/gdsc1_gdsc2_dict.npy'
 SMILES_PATH = 'my_data/canonical_smiles.json'
 PACCMANN_PATH = 'my_data/paccmann_array.npy'
 MODEL_PATH_prc = 'tf2_model_all/precily_cv_5.hdf5'  # Update with the actual path
@@ -67,26 +70,22 @@ def preprocess_input_tcnn(drug_name, cell_line_name):
     # Return the predictions
     return predictions[0][0]
 
-def preprocess_input_prc(drug_name, cell_line_name):
-    pathway_dict = np.load(PATHWAY_DICT_PATH, allow_pickle=True).item()
-    print(f'Pathway Dict: {len(pathway_dict)}')
-
-    #model taking final 600 pathways
-    model_prc = tf.keras.models.load_model(MODEL_PATH_prc)
-    key = (str(cell_line_name), str(drug_name))
-
-    # print(f'key: {key}')
-    # print(f'Pathway Dict: {len(pathway_dict)}')
-
-    # Assuming drug_data and cell_data are single elements, convert them to numpy arrays
-    if key not in pathway_dict:
+def preprocess_precily_input(drug_name, cell_line_name):
+    cell_line_pathways_dict = np.load(PRECILY_CELL_LINE_DICT_PATH, allow_pickle=True).item()
+    drug_pathways_dict = np.load(PRECILY_DRUG_DICT_PATH, allow_pickle=True).item()
+    
+    precily_model = tf.keras.models.load_model(MODEL_PATH_prc)
+    
+    cell_line_name = str(cell_line_name)
+    drug_name = str(drug_name)
+    
+    if cell_line_name not in cell_line_pathways_dict or drug_name not in drug_pathways_dict:
         return "error"
     else:
-        pathway_info = np.array(pathway_dict[key]).reshape(1,-1)
-        #print(f'Pathway Info: {pathway_info}')
-        # Make predictions using the loaded model
-        predictions = model_prc.predict(pathway_info)
-        # Return the predictions
+        cell_line_pathways = np.array(cell_line_pathways_dict[cell_line_name]).reshape(1,-1)
+        drug_pathways = np.array(drug_pathways_dict[drug_name]).reshape(1,-1)
+        pathway_info = np.concatenate((cell_line_pathways, drug_pathways), axis=1)
+        predictions = precily_model.predict(pathway_info)
         return predictions[0][0]
 
 
@@ -95,7 +94,8 @@ def preprocess_input_gdsc(drug_name, cell_line_name):
     gdsc_dict = np.load(GDSC_DICT_PATH, allow_pickle=True).item()
     print(f'GDSC Dict: {len(gdsc_dict)}')
 
-    key = (str(cell_line_name), str(drug_name))
+    # key = (str(cell_line_name), str(drug_name))
+    key = (str(drug_name), str(cell_line_name))
     predictions = gdsc_dict.get(key,"error")
     return predictions
 
@@ -135,8 +135,8 @@ def predict_precily():
         query = request.get_json()
         drug_name = query['drug_name']
         cell_line_name = query['cell_line_name']
-        prediction = preprocess_input_prc(drug_name, cell_line_name)
-        results = {'prediction': str(prediction)}
+        prediction = preprocess_precily_input(drug_name, cell_line_name)
+        results = {'prediction': str(round(prediction, 4))}
         return jsonify(results)
 
 @app.route('/tcnn', methods=['POST', 'GET'])
@@ -147,7 +147,7 @@ def predict_tcnn_ic50():
         cell_line_name = query['cell_line_name']
         raw_prediction = preprocess_input_tcnn(drug_name, cell_line_name)
         prediction = calculate_y(raw_prediction)
-        results = {'prediction': prediction}
+        results = {'prediction': round(prediction, 4)}
         return jsonify(results)
 
 @app.route('/gdsc', methods=['POST', 'GET'])
@@ -157,7 +157,7 @@ def predict_gdsc():
         drug_name = query['drug_name']
         cell_line_name = query['cell_line_name']
         prediction = preprocess_input_gdsc(drug_name, cell_line_name)
-        results = {'prediction': str(prediction)}
+        results = {'prediction': str(round(prediction, 4))}
         return jsonify(results)
 
 
@@ -168,7 +168,7 @@ def predict_paccmann():
         drug_name = query['drug_name']
         cell_line_name = query['cell_line_name']
         prediction = preprocess_input_paccmann(drug_name, cell_line_name)
-        results = {'prediction': str(prediction)}
+        results = {'prediction': str(round(prediction, 4))}
         return jsonify(results)
 
 if __name__ == '__main__':
