@@ -182,11 +182,13 @@
                 console.log(data);
                 // Assuming the server returns an object with an 'ic50' property
                 var ic50Value = data.prediction;
+                var result = ic50Value;
+                if(result=="error") result= '<span style="color:red"> This Drug Cell-Line interaction is not found in database.</span>';
     
                 // Update the DOM with the received IC50 value
                 var precilyResult = document.getElementById('precilyResult');
                 $(precilyResult).slideUp(callback = function() {
-                    precilyResult.innerHTML = '<span style="color:blue">Precily IC50 :</span> '+ic50Value;
+                    precilyResult.innerHTML = '<span style="color:blue">Precily IC50 :</span> '+result;
                 });
                 $(precilyResult).slideDown();
             })
@@ -211,11 +213,13 @@
                 console.log(data);
                 // Assuming the server returns an object with an 'ic50' property
                 var ic50Value = data.prediction;
+                var result = ic50Value;
+                if(result=="error") result = '<span style="color: red"> Key Not in TCNN Data Model.</span>';
     
                 // Update the DOM with the received IC50 value
                 var tcnnResult = document.getElementById('tcnnResult');
                 $(tcnnResult).slideUp(callback = function() {
-                    tcnnResult.innerHTML = '<span style="color:blue">TCNN  IC50 :</span> '+ic50Value;
+                    tcnnResult.innerHTML = '<span style="color:blue">TCNN  IC50 :</span> '+result;
                 });
                 $(tcnnResult).slideDown();
             })
@@ -240,11 +244,13 @@
                 console.log(data);
                 // Assuming the server returns an object with an 'ic50' property
                 var ic50Value = data.prediction;
+                var result = ic50Value;
+                if(result=="error") result = '<span style="color:red"> Drug Cell-Line combination not in GDSC database.</span>';
     
                 // Update the DOM with the received IC50 value
                 var gdscResult = document.getElementById('gdscResult');
                 $(gdscResult).slideUp(callback = function() {
-                    gdscResult.innerHTML = '<span style="color:black">GDSC IC50 :</span> '+ic50Value;
+                    gdscResult.innerHTML = '<span style="color:black">GDSC IC50 :</span> '+result;
                 });
                 $(gdscResult).slideDown();
             })
@@ -268,11 +274,13 @@
                 console.log(data);
                 // Assuming the server returns an object with an 'ic50' property
                 var ic50Value = data.prediction;
+                var paccmannResult = document.getElementById('paccmannResult');
+                var result = ic50Value;
+                if(ic50Value == "error") result = '<span style="color:red"> Drug Cell-Line combination not in Paccmann database.</span>';
     
                 // Update the DOM with the received IC50 value
-                var paccmannResult = document.getElementById('paccmannResult');
                 $(paccmannResult).slideUp(callback = function() {
-                    paccmannResult.innerHTML = '<span style="color:blue">Paccmann IC50 :</span> '+ic50Value;
+                    paccmannResult.innerHTML = '<span style="color:blue">Paccmann IC50 :</span> '+result;
                 });
                 $(paccmannResult).slideDown();
             })
